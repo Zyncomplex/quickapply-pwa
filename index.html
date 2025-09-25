@@ -1,98 +1,105 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QuickApply — paste job</title>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto;max-width:720px;margin:20px auto;padding:12px}
-    textarea{width:100%;height:160px;padding:10px;font-size:15px}
-    input,button{padding:10px 12px;font-size:14px;margin-top:8px}
-    .row{display:flex;gap:8px}
-    .small{font-size:13px;color:#555}
-    .status{margin-top:12px}
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>QuickApply — Paste Job</title>
+    <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto;max-width:720px;margin:20px auto;padding:12px}
+        textarea{width:100%;height:160px;padding:10px;font-size:15px}
+        input,button{padding:10px 12px;font-size:14px;margin-top:8px}
+        .row{display:flex;gap:8px}
+        .small{font-size:13px;color:#555}
+        .status{margin-top:12px;font-weight:bold;}
+    </style>
 </head>
 <body>
-  <h1>QuickApply</h1>
-  <p class="small">Paste job text here. The app will store it in your master sheet and trigger the automation.</p>
+    <h1>QuickApply</h1>
+    <p class="small">Paste job text here. The app will store it in your master sheet and trigger the automation.</p>
 
-  <label>Job text</label>
-  <textarea id="jobText" placeholder="Paste LinkedIn / job caption here..."></textarea>
+    <label>Job text</label>
+    <textarea id="jobText" placeholder="Paste LinkedIn / job caption here..."></textarea>
 
-  <div class="row">
-    <input id="resumeDriveFileId" placeholder="Resume Drive file id (optional)" style="flex:1" />
-    <button id="useDrive">Use Drive resume</button>
-  </div>
+    <div class="row">
+        <input id="resumeDriveFileId" placeholder="Resume Drive file id (optional)" style="flex:1" />
+        <button id="useDrive">Use Drive resume</button>
+    </div>
 
-  <div class="row">
-    <button id="submit">Submit to n8n</button>
-    <button id="saveLocal">Save locally</button>
-  </div>
+    <div class="row">
+        <button id="submit">Submit to n8n</button>
+        <button id="saveLocal">Save locally</button>
+    </div>
 
-  <div class="status" id="status"></div>
+    <div class="status" id="status"></div>
 
-  <script>
-  // config: replace with your webhook url
-  const WEBHOOK = 'https://n8n-production-05e6.up.railway.app/webhook/job-to-n8n';
+    <script>
+    // 🛑 CONFIGURATION: This is your live ngrok URL connected to n8n on port 5678.
+    const WEBHOOK = 'https://unkneeling-mira-awesome.ngrok-free.dev/webhook/job-to-n8n';
 
-  // nextJobId stored in localStorage, starts at 1992
-  const NEXT_ID_KEY = 'quickapply_nextJobId';
-  function getNextJobId(){
-    let n = parseInt(localStorage.getItem(NEXT_ID_KEY) || '1992', 10);
-    localStorage.setItem(NEXT_ID_KEY, String(n+1));
-    return String(n);
-  }
-
-  document.getElementById('useDrive').addEventListener('click', ()=>{
-    const id = document.getElementById('resumeDriveFileId').value.trim();
-    if(!id) return alert('Paste your Drive resume file id in the box first.');
-    document.getElementById('status').innerText = 'Resume Drive ID set: ' + id;
-  });
-
-  document.getElementById('saveLocal').addEventListener('click', ()=>{
-    const txt = document.getElementById('jobText').value.trim();
-    if(!txt) return alert('Paste job text first.');
-    localStorage.setItem('lastJobText', txt);
-    document.getElementById('status').innerText = 'Saved locally.';
-  });
-
-  document.getElementById('submit').addEventListener('click', async ()=>{
-    const jobText = document.getElementById('jobText').value.trim();
-    if(!jobText) return alert('Paste job text first.');
-
-    const resumeDriveFileId = document.getElementById('resumeDriveFileId').value.trim() || null;
-    const jobId = getNextJobId();
-    const payload = {
-      jobId,
-      timestamp: new Date().toISOString(),
-      jobText,
-      resumeDriveFileId
-    };
-
-    document.getElementById('status').innerText = 'Sending...';
-
-    try {
-      const res = await fetch(WEBHOOK, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      });
-      if(!res.ok) {
-        const txt = await res.text();
-        throw new Error(res.status + ' ' + txt);
-      }
-      const json = await res.json();
-      document.getElementById('status').innerText = 'Submitted — jobId: ' + jobId + ' — SheetRowId: ' + (json.sheetRowId || 'n/a');
-      // keep a tiny local history
-      const hist = JSON.parse(localStorage.getItem('quickapply_history')||'[]');
-      hist.unshift({jobId, timestamp: payload.timestamp, jobText: jobText.slice(0,140)});
-      localStorage.setItem('quickapply_history', JSON.stringify(hist.slice(0,20)));
-    } catch(err){
-      document.getElementById('status').innerText = 'Error: ' + err.message;
+    // nextJobId stored in localStorage, starts at 1992 as per your plan
+    const NEXT_ID_KEY = 'quickapply_nextJobId';
+    
+    function getNextJobId(){
+        let n = parseInt(localStorage.getItem(NEXT_ID_KEY) || '1992', 10);
+        localStorage.setItem(NEXT_ID_KEY, String(n + 1));
+        return String(n);
     }
-  });
-  </script>
+
+    document.getElementById('useDrive').addEventListener('click', ()=>{
+        const id = document.getElementById('resumeDriveFileId').value.trim();
+        if(!id) return alert('Paste your Drive resume file id in the box first.');
+        document.getElementById('status').innerText = 'Resume Drive ID set: ' + id;
+    });
+
+    document.getElementById('saveLocal').addEventListener('click', ()=>{
+        const txt = document.getElementById('jobText').value.trim();
+        if(!txt) return alert('Paste job text first.');
+        localStorage.setItem('lastJobText', txt);
+        document.getElementById('status').innerText = 'Saved locally.';
+    });
+
+    document.getElementById('submit').addEventListener('click', async ()=>{
+        const jobText = document.getElementById('jobText').value.trim();
+        if(!jobText) return alert('Paste job text first.');
+
+        const resumeDriveFileId = document.getElementById('resumeDriveFileId').value.trim() || null;
+        const jobId = getNextJobId();
+        
+        const payload = {
+            jobId,
+            timestamp: new Date().toISOString(),
+            jobText,
+            resumeDriveFileId
+        };
+
+        document.getElementById('status').innerText = 'Sending to n8n...';
+
+        try {
+            const res = await fetch(WEBHOOK, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            if(!res.ok) {
+                const txt = await res.text();
+                throw new Error(res.status + ' ' + txt);
+            }
+            
+            // The n8n webhook returns a JSON object (expected by plan)
+            const json = await res.json();
+            document.getElementById('status').innerText = '✅ Submitted! Job ID: ' + jobId + ' | Sheet Row: ' + (json.sheetRowId || 'n/a');
+            
+            // Log history locally
+            const hist = JSON.parse(localStorage.getItem('quickapply_history')||'[]');
+            hist.unshift({jobId, timestamp: payload.timestamp, jobText: jobText.slice(0,140)});
+            localStorage.setItem('quickapply_history', JSON.stringify(hist.slice(0,20)));
+            
+        } catch(err){
+            document.getElementById('status').innerText = '❌ Error: ' + err.message;
+            console.error(err);
+        }
+    });
+    </script>
 </body>
 </html>
-
